@@ -45,7 +45,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --locked -p emvbin --verbose
+          args: --locked -p evmbin --verbose
       - name: Run cargo check benches
         uses: actions-rs/cargo@v1
         with:
