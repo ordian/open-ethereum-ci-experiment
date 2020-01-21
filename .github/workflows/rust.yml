@@ -1,9 +1,7 @@
 # Based on https://github.com/iqlusioninc/crates/blob/develop/.github/workflows/rust.yml
 
 on: [push]
-
 name: Rust
-
 jobs:
   check:
     name: Check
@@ -56,7 +54,6 @@ jobs:
       - name: Run validate chainspecs
         with:
           command: ./scripts/gitlab/validate-chainspecs.sh
-
   test:
     name: Test Suite
     strategy:
