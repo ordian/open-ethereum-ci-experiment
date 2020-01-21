@@ -52,8 +52,7 @@ jobs:
           command: check
           args: --locked --all --benches --verbose
       - name: Run validate chainspecs
-        with:
-          command: ./scripts/gitlab/validate-chainspecs.sh
+        run: ./scripts/gitlab/validate-chainspecs.sh
   test:
     name: Test Suite
     strategy:
