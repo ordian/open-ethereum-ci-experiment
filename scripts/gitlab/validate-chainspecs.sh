@@ -25,5 +25,4 @@ for eip in $(grep --only-matching "eip.*Transition" ethcore/res/ethereum/istanbu
 done
 
 #show sccache statistics
-sccache --show-stats
 exit $ERR
