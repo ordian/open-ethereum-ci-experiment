@@ -12,7 +12,6 @@ jobs:
         with:
           fetch-depth: 50
       - name: Checkout submodules
-        uses: actions/checkout@v2
         shell: bash
         run: |
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
@@ -78,7 +77,6 @@ jobs:
         with:
           fetch-depth: 50
       - name: Checkout submodules
-        uses: actions/checkout@v2
         shell: bash
         run: |
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
