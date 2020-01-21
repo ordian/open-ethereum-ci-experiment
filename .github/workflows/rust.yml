@@ -1,0 +1,114 @@
+# Based on https://github.com/iqlusioninc/crates/blob/develop/.github/workflows/rust.yml
+
+on: [push]
+
+name: Rust
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 50
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('Cargo.lock') }}
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Run cargo check 1/3
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --locked --no-default-features --verbose
+
+      - name: Run cargo check 2/3
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --locked --manifest-path util/io/Cargo.toml --no-default-features --verbose
+
+      - name: Run cargo check 3/3
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --locked --manifest-path util/io/Cargo.toml --features "mio" --verbose
+
+      - name: Run cargo check evmbin
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --locked -p emvbin --verbose
+
+      - name: Run cargo check benches
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --locked --all --benches --verbose
+
+      - name: Run validate chainspecs
+        with:
+          command: ./scripts/gitlab/validate-chainspecs.sh
+
+  test:
+    name: Test Suite
+    strategy:
+      matrix:
+        platform:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        toolchain:
+          - stable
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 50
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('Cargo.lock') }}
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked --all --features "json-tests" --release --verbose
