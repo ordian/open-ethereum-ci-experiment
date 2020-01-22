@@ -95,8 +95,18 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           override: true
+      - name: Run compile test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked --all --release --verbose --no-run
+      - name: Run compile test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked --all --release --verbose --no-run
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --locked --all --features "json-tests" --release --verbose
+          args: --locked --all --release --verbose
