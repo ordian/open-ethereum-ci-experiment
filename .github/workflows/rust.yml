@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 50
       - name: Checkout submodules
         shell: bash
-        run: git submodule update --init --recursive
+        run: git submodule update --init --recursive --depth 1
       - name: Cache cargo registry
         uses: actions/cache@v1
         with:
@@ -74,7 +74,7 @@ jobs:
           fetch-depth: 50
       - name: Checkout submodules
         shell: bash
-        run: git submodule update --init --recursive
+        run: git submodule update --init --recursive --depth 1
       - name: Cache cargo registry
         uses: actions/cache@v1
         with:
