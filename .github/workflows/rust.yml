@@ -1,7 +1,13 @@
 # Based on https://github.com/iqlusioninc/crates/blob/develop/.github/workflows/rust.yml
 
-on: [push]
 name: Rust
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
 jobs:
   check:
     name: Check
@@ -14,6 +20,11 @@ jobs:
       - name: Checkout submodules
         shell: bash
         run: git submodule update --init --recursive
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v1
         with:
@@ -29,11 +40,6 @@ jobs:
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('Cargo.lock') }}
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
       - name: Run cargo check 1/3
         uses: actions-rs/cargo@v1
         with:
@@ -61,8 +67,14 @@ jobs:
           args: --locked --all --benches --verbose
       - name: Run validate chainspecs
         run: ./scripts/gitlab/validate-chainspecs.sh
-  test:
-    name: Test Suite
+      # From https://github.com/launchbadge/sqlx/blob/master/.github/workflows/rust.yml
+      - name: Prepare build directory for cache
+        run: |
+          find ./target/debug -maxdepth 1 -type f -delete \
+          && rm -fr ./target/debug/{deps,.fingerprint}/*{parity,ethcore}* \
+          && rm -f  ./target/.rustc_info.json
+  build-tests:
+    name: Build Release Test Suite
     needs: check
     strategy:
       matrix:
@@ -80,6 +92,11 @@ jobs:
       - name: Checkout submodules
         shell: bash
         run: git submodule update --init --recursive
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v1
         with:
@@ -95,17 +112,57 @@ jobs:
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('Cargo.lock') }}
+      - name: Build tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked --all --release --features "json-tests" --verbose --no-run
+      # From https://github.com/launchbadge/sqlx/blob/master/.github/workflows/rust.yml
+      - name: Prepare build directory for cache
+        run: |
+          find ./target/release -maxdepth 1 -type f -delete \
+          && rm -fr ./target/release/{deps,.fingerprint}/*{parity,ethcore}* \
+          && rm -f  ./target/.rustc_info.json
+  run-tests:
+    name: Run Test Suite
+    needs: build-tests
+    strategy:
+      matrix:
+        platform:
+          - ubuntu-latest
+          - macos-latest
+        toolchain:
+          - stable
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 50
+      - name: Checkout submodules
+        shell: bash
+        run: git submodule update --init --recursive
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.toolchain }}
           override: true
-      - name: Run compile test
-        uses: actions-rs/cargo@v1
+      - name: Cache cargo registry
+        uses: actions/cache@v1
         with:
-          command: test
-          args: --locked --all --release --features "json-tests" --verbose --no-run
-      - name: Run cargo test
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('Cargo.lock') }}
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('Cargo.lock') }}
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('Cargo.lock') }}
+      - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
